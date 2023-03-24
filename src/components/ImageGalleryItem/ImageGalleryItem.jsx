@@ -1,8 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 
-export const ImageGalleryItem = () => (
-  <li class="gallery-item">
-    <img src="" alt="" />
-  </li>
-);
+export const ImageGalleryItem = ({ image }) => {
+  return (
+    <li>
+      <img src={image.webformatURL} alt={image.tags} />
+    </li>
+  );
+};

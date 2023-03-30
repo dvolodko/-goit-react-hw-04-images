@@ -3,10 +3,14 @@ import React from 'react';
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 import { Gallery } from './ImageGallery,styled';
 
-export const ImageGallery = ({ images }) => (
+export const ImageGallery = ({ images, imageClickHandler }) => (
   <Gallery>
     {images.map(image => (
-      <ImageGalleryItem key={image.id} image={image} />
+      <ImageGalleryItem
+        key={image.id}
+        image={image}
+        imageClickHandler={imageClickHandler}
+      />
     ))}
   </Gallery>
 );

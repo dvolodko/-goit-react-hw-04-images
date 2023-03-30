@@ -19,6 +19,7 @@ export class App extends Component {
     searchQuery: '',
     page: 1,
     images: [],
+    largeImageURL: '',
     showModal: false,
   };
 
@@ -33,7 +34,7 @@ export class App extends Component {
 
   async fetchImages() {
     const response = await axios.get(
-      `/?key=${API_KEY}&q=${this.state.searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&per_page=${perPage}&page=${this.state.page}`
+      `/?key=${API_KEY}&q=${this.state.searchQuery}&image_type=photo&orientation=horizontal&per_page=${perPage}&page=${this.state.page}`
     );
     this.setState(prevState => {
       const newImages = [...prevState.images, ...response.data.hits];
@@ -61,19 +62,29 @@ export class App extends Component {
     });
   };
 
+  imageClickHandler = event => {
+    this.toggleModal();
+    this.setState({ largeImageURL: event.currentTarget.dataset.url });
+  };
+
   render() {
     const { showModal } = this.state;
     const { images } = this.state;
+    const { largeImageURL } = this.state;
 
     return (
       <ApiContainer>
         <Searchbar submitHandler={this.handleSubmit} />
-        {images.length > 0 ? <ImageGallery images={images} /> : null}
+        {images.length > 0 ? (
+          <ImageGallery
+            images={images}
+            imageClickHandler={this.imageClickHandler}
+          />
+        ) : null}
         {images.length > 0 ? <Button loadMore={this.loadMore} /> : null}
-        {/* <button type="button" onClick={this.toggleModal}>
-          Open modal window
-        </button> */}
-        {showModal && <Modal></Modal>}
+        {showModal && (
+          <Modal url={largeImageURL} onClose={this.toggleModal}></Modal>
+        )}
       </ApiContainer>
     );
   }

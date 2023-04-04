@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { ThreeDots } from 'react-loader-spinner';
 // import ApiService from './js/api-service';
 import { Modal } from './Modal/Modal';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -19,8 +20,10 @@ export class App extends Component {
     searchQuery: '',
     page: 1,
     images: [],
+    totalHits: 0,
     largeImageURL: '',
     showModal: false,
+    isLoading: false,
   };
 
   async componentDidMount() {}
@@ -33,13 +36,19 @@ export class App extends Component {
   }
 
   async fetchImages() {
+    this.setState({ isLoading: true });
     const response = await axios.get(
       `/?key=${API_KEY}&q=${this.state.searchQuery}&image_type=photo&orientation=horizontal&per_page=${perPage}&page=${this.state.page}`
     );
     this.setState(prevState => {
       const newImages = [...prevState.images, ...response.data.hits];
-      return { page: prevState.page + 1, images: newImages };
+      return {
+        page: prevState.page + 1,
+        images: newImages,
+        totalHits: response.data.totalHits,
+      };
     });
+    this.setState({ isLoading: false });
   }
 
   loadMore = () => {
@@ -67,10 +76,15 @@ export class App extends Component {
     this.setState({ largeImageURL: event.currentTarget.dataset.url });
   };
 
+  isLoadMoreButton = () => {
+    return this.state.totalHits / perPage > this.state.page - 1;
+  };
+
   render() {
     const { showModal } = this.state;
     const { images } = this.state;
     const { largeImageURL } = this.state;
+    const { isLoading } = this.state;
 
     return (
       <ApiContainer>
@@ -81,7 +95,18 @@ export class App extends Component {
             imageClickHandler={this.imageClickHandler}
           />
         ) : null}
-        {images.length > 0 ? <Button loadMore={this.loadMore} /> : null}
+        {isLoading && (
+          <ThreeDots
+            height="80"
+            width="80"
+            radius="9"
+            color="#3f51b5"
+            ariaLabel="three-dots-loading"
+          />
+        )}
+        {images.length > 0 && this.isLoadMoreButton() ? (
+          <Button loadMore={this.loadMore} />
+        ) : null}
         {showModal && (
           <Modal url={largeImageURL} onClose={this.toggleModal}></Modal>
         )}

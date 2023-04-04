@@ -1,5 +1,5 @@
 import React from 'react';
-// import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 import { ImageItem, Image } from './ImageGalleryItem.styled';
 
 export const ImageGalleryItem = ({ image, imageClickHandler }) => {
@@ -13,4 +13,9 @@ export const ImageGalleryItem = ({ image, imageClickHandler }) => {
       />
     </ImageItem>
   );
+};
+
+ImageGalleryItem.propTypes = {
+  image: PropTypes.object.isRequired,
+  imageClickHandler: PropTypes.func.isRequired,
 };

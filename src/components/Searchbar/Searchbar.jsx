@@ -25,6 +25,11 @@ export class Searchbar extends Component {
 
   handleSubmit = event => {
     event.preventDefault();
+
+    if (this.state.searchQuery.trim() === '') {
+      alert('Search Query can not be empty');
+      return;
+    }
     this.props.submitHandler(this.state.searchQuery);
   };
 

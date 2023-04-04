@@ -81,10 +81,7 @@ export class App extends Component {
   };
 
   render() {
-    const { showModal } = this.state;
-    const { images } = this.state;
-    const { largeImageURL } = this.state;
-    const { isLoading } = this.state;
+    const { showModal, images, largeImageURL, isLoading } = this.state;
 
     return (
       <ApiContainer>

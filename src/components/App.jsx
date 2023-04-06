@@ -1,19 +1,11 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import { ThreeDots } from 'react-loader-spinner';
-// import ApiService from './js/api-service';
+import { getImages } from 'api-service';
 import { Modal } from './Modal/Modal';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { ApiContainer } from './App.styled';
-
-const API_KEY = '32552782-0d4c86680018457e820f20492';
-const perPage = 12;
-
-axios.defaults.baseURL = 'https://pixabay.com/api';
-
-// const apiService = new ApiService();
 
 export class App extends Component {
   state = {
@@ -24,35 +16,56 @@ export class App extends Component {
     largeImageURL: '',
     showModal: false,
     isLoading: false,
+    error: '',
+    isLoadMoreButtonShawn: true,
   };
 
-  async componentDidMount() {}
-
-  async componentDidUpdate(prevProps, prevState) {
-    if (this.state.searchQuery !== prevState.searchQuery) {
-      this.reset();
+  async componentDidUpdate(_, prevState) {
+    const { page, searchQuery } = this.state;
+    if (searchQuery !== prevState.searchQuery || page !== prevState.page) {
       this.fetchImages();
     }
   }
 
   async fetchImages() {
+    const { page, searchQuery } = this.state;
     this.setState({ isLoading: true });
-    const response = await axios.get(
-      `/?key=${API_KEY}&q=${this.state.searchQuery}&image_type=photo&orientation=horizontal&per_page=${perPage}&page=${this.state.page}`
-    );
-    this.setState(prevState => {
-      const newImages = [...prevState.images, ...response.data.hits];
-      return {
-        page: prevState.page + 1,
-        images: newImages,
-        totalHits: response.data.totalHits,
-      };
-    });
-    this.setState({ isLoading: false });
+    try {
+      const { hits, totalHits } = await getImages(searchQuery, page);
+
+      console.log('totalHits: ', totalHits);
+      console.log('page * 12: ', page * 12);
+      console.log('module: ', totalHits / (12 * page));
+
+      if (!hits.length) {
+        alert('No images found');
+        return;
+      }
+
+      if (totalHits / (12 * page) <= 1) {
+        this.setState({ isLoadMoreButtonShawn: false });
+      } else {
+        this.setState({ isLoadMoreButtonShawn: true });
+      }
+
+      this.setState(prevState => {
+        return {
+          images: [...prevState.images, ...hits],
+          totalHits,
+          error: '',
+        };
+      });
+    } catch (error) {
+      this.setState({ error: 'Oops. Something went wrong' });
+    } finally {
+      this.setState({ isLoading: false });
+    }
   }
 
   loadMore = () => {
-    this.fetchImages();
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+    }));
   };
 
   toggleModal = () => {
@@ -61,23 +74,18 @@ export class App extends Component {
     }));
   };
 
-  reset = () => {
-    this.setState({ page: 1, images: [] });
-  };
-
   handleSubmit = searchQuery => {
     this.setState({
       searchQuery: searchQuery,
+      page: 1,
+      images: [],
+      totalHits: 0,
     });
   };
 
   imageClickHandler = event => {
     this.toggleModal();
     this.setState({ largeImageURL: event.currentTarget.dataset.url });
-  };
-
-  isLoadMoreButton = () => {
-    return this.state.totalHits / perPage > this.state.page - 1;
   };
 
   render() {
@@ -101,7 +109,7 @@ export class App extends Component {
             ariaLabel="three-dots-loading"
           />
         )}
-        {images.length > 0 && this.isLoadMoreButton() ? (
+        {images.length > 0 && this.state.isLoadMoreButtonShawn ? (
           <Button loadMore={this.loadMore} />
         ) : null}
         {showModal && (

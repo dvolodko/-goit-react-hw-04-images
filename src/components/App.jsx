@@ -17,7 +17,6 @@ export class App extends Component {
     showModal: false,
     isLoading: false,
     error: '',
-    isLoadMoreButtonShawn: true,
   };
 
   async componentDidUpdate(_, prevState) {
@@ -33,19 +32,9 @@ export class App extends Component {
     try {
       const { hits, totalHits } = await getImages(searchQuery, page);
 
-      console.log('totalHits: ', totalHits);
-      console.log('page * 12: ', page * 12);
-      console.log('module: ', totalHits / (12 * page));
-
       if (!hits.length) {
         alert('No images found');
         return;
-      }
-
-      if (totalHits / (12 * page) <= 1) {
-        this.setState({ isLoadMoreButtonShawn: false });
-      } else {
-        this.setState({ isLoadMoreButtonShawn: true });
       }
 
       this.setState(prevState => {
@@ -89,7 +78,9 @@ export class App extends Component {
   };
 
   render() {
-    const { showModal, images, largeImageURL, isLoading } = this.state;
+    const { showModal, images, largeImageURL, isLoading, totalHits } =
+      this.state;
+    const showButton = images.length !== totalHits && !isLoading;
 
     return (
       <ApiContainer>
@@ -109,9 +100,7 @@ export class App extends Component {
             ariaLabel="three-dots-loading"
           />
         )}
-        {images.length > 0 && this.state.isLoadMoreButtonShawn ? (
-          <Button loadMore={this.loadMore} />
-        ) : null}
+        {showButton ? <Button loadMore={this.loadMore} /> : null}
         {showModal && (
           <Modal url={largeImageURL} onClose={this.toggleModal}></Modal>
         )}

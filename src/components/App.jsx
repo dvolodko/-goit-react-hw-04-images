@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ThreeDots } from 'react-loader-spinner';
 import { getImages } from 'api-service';
 import { Modal } from './Modal/Modal';
@@ -7,104 +7,87 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { ApiContainer } from './App.styled';
 
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    page: 1,
-    images: [],
-    totalHits: 0,
-    largeImageURL: '',
-    showModal: false,
-    isLoading: false,
-    error: '',
-  };
+export function App() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [totalHits, setTotalHits] = useState(0);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const initialRender = useRef(true);
 
-  async componentDidUpdate(_, prevState) {
-    const { page, searchQuery } = this.state;
-    if (searchQuery !== prevState.searchQuery || page !== prevState.page) {
-      this.fetchImages();
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+    } else {
+      setIsLoading(true);
+      const getData = async () => {
+        try {
+          const { hits, totalHits } = await getImages(searchQuery, page);
+
+          if (!hits.length) {
+            alert('No images found');
+            return;
+          }
+
+          setImages(prevState => [...prevState, ...hits]);
+          setTotalHits(totalHits);
+          setError('');
+        } catch (error) {
+          setError('Oops. Something went wrong');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      getData();
     }
-  }
+  }, [page, searchQuery]);
 
-  async fetchImages() {
-    const { page, searchQuery } = this.state;
-    this.setState({ isLoading: true });
-    try {
-      const { hits, totalHits } = await getImages(searchQuery, page);
+  useEffect(() => {
+    console.log(error);
+  }, [error]);
 
-      if (!hits.length) {
-        alert('No images found');
-        return;
-      }
-
-      this.setState(prevState => {
-        return {
-          images: [...prevState.images, ...hits],
-          totalHits,
-          error: '',
-        };
-      });
-    } catch (error) {
-      this.setState({ error: 'Oops. Something went wrong' });
-    } finally {
-      this.setState({ isLoading: false });
-    }
-  }
-
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = () => {
+    setShowModal(!showModal);
   };
 
-  handleSubmit = searchQuery => {
-    this.setState({
-      searchQuery: searchQuery,
-      page: 1,
-      images: [],
-      totalHits: 0,
-    });
+  const handleSubmit = searchQuery => {
+    setSearchQuery(searchQuery);
+    setPage(1);
+    setImages([]);
+    setTotalHits(0);
   };
 
-  imageClickHandler = event => {
-    this.toggleModal();
-    this.setState({ largeImageURL: event.currentTarget.dataset.url });
+  const imageClickHandler = event => {
+    toggleModal();
+    setLargeImageURL(event.currentTarget.dataset.url);
   };
 
-  render() {
-    const { showModal, images, largeImageURL, isLoading, totalHits } =
-      this.state;
-    const showButton = images.length !== totalHits && !isLoading;
+  const showButton = images.length !== totalHits && !isLoading;
 
-    return (
-      <ApiContainer>
-        <Searchbar submitHandler={this.handleSubmit} />
-        {images.length > 0 ? (
-          <ImageGallery
-            images={images}
-            imageClickHandler={this.imageClickHandler}
-          />
-        ) : null}
-        {isLoading && (
-          <ThreeDots
-            height="80"
-            width="80"
-            radius="9"
-            color="#3f51b5"
-            ariaLabel="three-dots-loading"
-          />
-        )}
-        {showButton ? <Button loadMore={this.loadMore} /> : null}
-        {showModal && (
-          <Modal url={largeImageURL} onClose={this.toggleModal}></Modal>
-        )}
-      </ApiContainer>
-    );
-  }
+  return (
+    <ApiContainer>
+      <Searchbar submitHandler={handleSubmit} />
+      {images.length > 0 ? (
+        <ImageGallery images={images} imageClickHandler={imageClickHandler} />
+      ) : null}
+      {isLoading && (
+        <ThreeDots
+          height="80"
+          width="80"
+          radius="9"
+          color="#3f51b5"
+          ariaLabel="three-dots-loading"
+        />
+      )}
+      {showButton ? <Button loadMore={loadMore} /> : null}
+      {showModal && <Modal url={largeImageURL} onClose={toggleModal}></Modal>}
+    </ApiContainer>
+  );
 }

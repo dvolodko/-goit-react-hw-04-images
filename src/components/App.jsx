@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThreeDots } from 'react-loader-spinner';
 import { getImages } from 'api-service';
 import { Modal } from './Modal/Modal';
@@ -13,36 +13,41 @@ export function App() {
   const [images, setImages] = useState([]);
   const [totalHits, setTotalHits] = useState(0);
   const [largeImageURL, setLargeImageURL] = useState('');
-  const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const initialRender = useRef(true);
 
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-    } else {
-      setIsLoading(true);
-      const getData = async () => {
-        try {
-          const { hits, totalHits } = await getImages(searchQuery, page);
+    if (!searchQuery) return;
 
-          if (!hits.length) {
-            alert('No images found');
-            return;
-          }
+    setIsLoading(true);
+    const getData = async () => {
+      try {
+        const { hits, totalHits } = await getImages(searchQuery, page);
 
-          setImages(prevState => [...prevState, ...hits]);
-          setTotalHits(totalHits);
-          setError('');
-        } catch (error) {
-          setError('Oops. Something went wrong');
-        } finally {
-          setIsLoading(false);
+        if (!hits.length) {
+          alert('No images found');
+          return;
         }
-      };
-      getData();
-    }
+
+        const images = hits.map(
+          ({ id, tags, webformatURL, largeImageURL }) => ({
+            id,
+            tags,
+            webformatURL,
+            largeImageURL,
+          })
+        );
+
+        setImages(prevState => [...prevState, ...images]);
+        setTotalHits(totalHits);
+        setError('');
+      } catch (error) {
+        setError('Oops. Something went wrong');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getData();
   }, [page, searchQuery]);
 
   useEffect(() => {
@@ -53,10 +58,6 @@ export function App() {
     setPage(prevState => prevState + 1);
   };
 
-  const toggleModal = () => {
-    setShowModal(!showModal);
-  };
-
   const handleSubmit = searchQuery => {
     setSearchQuery(searchQuery);
     setPage(1);
@@ -64,9 +65,8 @@ export function App() {
     setTotalHits(0);
   };
 
-  const imageClickHandler = event => {
-    toggleModal();
-    setLargeImageURL(event.currentTarget.dataset.url);
+  const imageClickHandler = (largeImageURL = '') => {
+    setLargeImageURL(largeImageURL);
   };
 
   const showButton = images.length !== totalHits && !isLoading;
@@ -87,9 +87,9 @@ export function App() {
         />
       )}
       {showButton ? <Button loadMore={loadMore} /> : null}
-      {showModal && <Modal url={largeImageURL} onClose={toggleModal}></Modal>}
+      {Boolean(largeImageURL) && (
+        <Modal url={largeImageURL} onClose={imageClickHandler}></Modal>
+      )}
     </ApiContainer>
   );
 }
-
-// comment for github

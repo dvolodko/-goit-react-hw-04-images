@@ -8,8 +8,7 @@ export const ImageGalleryItem = ({ image, imageClickHandler }) => {
       <Image
         src={image.webformatURL}
         alt={image.tags}
-        data-url={image.largeImageURL}
-        onClick={imageClickHandler}
+        onClick={() => imageClickHandler(image.largeImageURL)}
       />
     </ImageItem>
   );
